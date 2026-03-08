@@ -55,7 +55,6 @@ env:
   WRT_PACKAGE: ${{ inputs.WRT_PACKAGE }}
   WRT_TEST: ${{ inputs.WRT_TEST }}
 
-  # ccache
   CCACHE_DIR: ${{ github.workspace }}/.ccache
   CCACHE_COMPRESS: "1"
   CCACHE_MAXSIZE: "3G"
