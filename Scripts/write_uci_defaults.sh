@@ -26,6 +26,7 @@ uci -q set dhcp.lan.ignore='1'
 uci -q set dhcp.lan.ra='disabled'
 uci -q set dhcp.lan.dhcpv6='disabled'
 uci -q set dhcp.lan.ndp='disabled'
+
 uci -q commit network
 uci -q commit dhcp
 
