@@ -24,7 +24,15 @@ if [ -d *"homeproxy"* ]; then
 fi
 
 # 预置OpenClash smart内核和数据
+OC_PATH=""
+
 if [ -d "./OpenClash/luci-app-openclash/root/etc/openclash" ]; then
+	OC_PATH="./OpenClash/luci-app-openclash/root/etc/openclash"
+elif [ -d "./OpenClash/root/etc/openclash" ]; then
+	OC_PATH="./OpenClash/root/etc/openclash"
+fi
+
+if [ -n "$OC_PATH" ]; then
 	CORE_TYPE=$(echo $WRT_CONFIG | grep -Eiq "64|86" && echo "amd64" || echo "arm64")
 
 	# 设置仓库信息
@@ -32,11 +40,9 @@ if [ -d "./OpenClash/luci-app-openclash/root/etc/openclash" ]; then
 	REPO="mihomo"
 	FILE_PATTERN="mihomo-linux-$CORE_TYPE-alpha-smart.*\\.gz"
 
-	# 获取最新的预发布的Smart核心版本信息
 	echo "Retrieving the latest pre-release version information for OpenClash Smart Core..."
 	RELEASE_JSON=$(curl -s "https://api.github.com/repos/$OWNER/$REPO/releases?per_page=5")
 
-	# 提取包含所需资源文件的最新预发布版本资源信息
 	ASSET_URL=$(echo "$RELEASE_JSON" | jq -r --arg pattern "$FILE_PATTERN" \
 		'.[] | select(.prerelease == true) | .assets[] | select(.name | test($pattern)) | .browser_download_url' | head -n1)
 
@@ -77,7 +83,7 @@ if [ -d "./OpenClash/luci-app-openclash/root/etc/openclash" ]; then
 		exit 0
 	fi
 
-	cd ./OpenClash/luci-app-openclash/root/etc/openclash/
+	cd "$OC_PATH"
 
 	curl -sL -o Model.bin https://github.com/vernesong/mihomo/releases/download/LightGBM-Model/Model.bin && echo "OpenClash Model.bin done!"
 	curl -sL -o Country.mmdb "$GEO_MMDB" && echo "✅ OpenClash Country.mmdb done!"
@@ -98,6 +104,8 @@ if [ -d "./OpenClash/luci-app-openclash/root/etc/openclash" ]; then
 	fi
 
 	cd "$PKG_PATH" && echo "✅ OpenClash smart core, Model and data have been updated!"
+else
+	echo "OpenClash path not found, skipped."
 fi
 
 # 修改argon主题字体和颜色
