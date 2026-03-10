@@ -24,7 +24,7 @@ if [ -d *"homeproxy"* ]; then
 fi
 
 # 预置OpenClash smart内核和数据
-if [ -d *"OpenClash"* ]; then
+if [ -d "./OpenClash/luci-app-openclash/root/etc/openclash" ]; then
 	CORE_TYPE=$(echo $WRT_CONFIG | grep -Eiq "64|86" && echo "amd64" || echo "arm64")
 
 	# 设置仓库信息
@@ -80,12 +80,12 @@ if [ -d *"OpenClash"* ]; then
 	cd ./OpenClash/luci-app-openclash/root/etc/openclash/
 
 	curl -sL -o Model.bin https://github.com/vernesong/mihomo/releases/download/LightGBM-Model/Model.bin && echo "OpenClash Model.bin done!"
-	curl -sL -o Country.mmdb $GEO_MMDB && echo "✅ OpenClash Country.mmdb done!"
-	curl -sL -o GeoSite.dat $GEO_SITE && echo "✅ OpenClash GeoSite.dat done!"
+	curl -sL -o Country.mmdb "$GEO_MMDB" && echo "✅ OpenClash Country.mmdb done!"
+	curl -sL -o GeoSite.dat "$GEO_SITE" && echo "✅ OpenClash GeoSite.dat done!"
 
-	mkdir ./core/ && cd ./core/
+	mkdir -p ./core/ && cd ./core/
 
-	curl -sL -o $FILENAME $ASSET_URL
+	curl -sL -o "$FILENAME" "$ASSET_URL"
 	gunzip -c "$FILENAME" > clash_meta
 
 	if [ $? -eq 0 ]; then
@@ -97,7 +97,7 @@ if [ -d *"OpenClash"* ]; then
 		exit 0
 	fi
 
-	cd $PKG_PATH && echo "✅ OpenClash smart core, Model and data have been updated!"
+	cd "$PKG_PATH" && echo "✅ OpenClash smart core, Model and data have been updated!"
 fi
 
 # 修改argon主题字体和颜色
