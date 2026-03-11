@@ -42,6 +42,7 @@ on:
 
 env:
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
   WRT_CONFIG: ${{ inputs.WRT_CONFIG }}
   WRT_THEME: ${{ inputs.WRT_THEME }}
   WRT_NAME: ${{ inputs.WRT_NAME }}
@@ -263,7 +264,7 @@ jobs:
           fi
 
       - name: Release Firmware
-        uses: softprops/action-gh-release@v2.4.0
+        uses: softprops/action-gh-release@v2.5.0
         with:
           tag_name: ${{ env.WRT_CONFIG }}-${{ env.WRT_INFO }}-${{ env.WRT_BRANCH }}-${{ env.WRT_DATE }}
           files: ./wrt/upload/*.*
