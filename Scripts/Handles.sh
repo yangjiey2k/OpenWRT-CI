@@ -23,6 +23,20 @@ if [ -d *"homeproxy"* ]; then
 	cd $PKG_PATH && echo "homeproxy data has been updated!"
 fi
 
+# OpenClash 调试输出
+echo "=== DEBUG OpenClash tree ==="
+pwd
+ls -la
+if [ -d "./OpenClash" ]; then
+	echo "--- ls OpenClash ---"
+	ls -la ./OpenClash
+	echo "--- find OpenClash depth 3 ---"
+	find ./OpenClash -maxdepth 3 -type d | sort
+else
+	echo "OpenClash directory not found in current path."
+fi
+echo "=== DEBUG OpenClash tree end ==="
+
 # 预置OpenClash smart内核和数据
 OC_PATH=""
 
