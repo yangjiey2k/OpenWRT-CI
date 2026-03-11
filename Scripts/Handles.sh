@@ -23,24 +23,12 @@ if [ -d *"homeproxy"* ]; then
 	cd $PKG_PATH && echo "homeproxy data has been updated!"
 fi
 
-# OpenClash 调试输出
-echo "=== DEBUG OpenClash tree ==="
-pwd
-ls -la
-if [ -d "./OpenClash" ]; then
-	echo "--- ls OpenClash ---"
-	ls -la ./OpenClash
-	echo "--- find OpenClash depth 3 ---"
-	find ./OpenClash -maxdepth 3 -type d | sort
-else
-	echo "OpenClash directory not found in current path."
-fi
-echo "=== DEBUG OpenClash tree end ==="
-
 # 预置OpenClash smart内核和数据
 OC_PATH=""
 
-if [ -d "./OpenClash/luci-app-openclash/root/etc/openclash" ]; then
+if [ -d "./luci-app-openclash/root/etc/openclash" ]; then
+	OC_PATH="./luci-app-openclash/root/etc/openclash"
+elif [ -d "./OpenClash/luci-app-openclash/root/etc/openclash" ]; then
 	OC_PATH="./OpenClash/luci-app-openclash/root/etc/openclash"
 elif [ -d "./OpenClash/root/etc/openclash" ]; then
 	OC_PATH="./OpenClash/root/etc/openclash"
@@ -49,7 +37,6 @@ fi
 if [ -n "$OC_PATH" ]; then
 	CORE_TYPE=$(echo $WRT_CONFIG | grep -Eiq "64|86" && echo "amd64" || echo "arm64")
 
-	# 设置仓库信息
 	OWNER="vernesong"
 	REPO="mihomo"
 	FILE_PATTERN="mihomo-linux-$CORE_TYPE-alpha-smart.*\\.gz"
@@ -66,12 +53,9 @@ if [ -n "$OC_PATH" ]; then
 		echo "File Name: $FILENAME"
 	else
 		echo "No matching pre-release resource file found."
-		echo "Attempt to directly list all resource files for inspection:"
-		echo " curl -s 'https://api.github.com/repos/$OWNER/$REPO/releases?per_page=3' | jq -r '.[] | \"\\(.name):\", (.assets[] | \" \\(.name)\")')'"
 		exit 0
 	fi
 
-	# 获取最新发布的Country.mmdb下载链接
 	LATEST_MMDBURL=$(curl -s "https://api.github.com/repos/alecthw/mmdb_china_ip_list/releases/latest" | \
 		grep -o '"browser_download_url": *"[^"]*Country\.mmdb"' | \
 		cut -d'"' -f4)
@@ -84,7 +68,6 @@ if [ -n "$OC_PATH" ]; then
 		exit 0
 	fi
 
-	# 获取最新发布的geosite.dat下载链接
 	LATEST_GEOURL=$(curl -s "https://api.github.com/repos/Loyalsoldier/v2ray-rules-dat/releases/latest" | \
 		grep -o '"browser_download_url": *"[^"]*geosite\.dat"' | \
 		cut -d'"' -f4)
@@ -125,7 +108,6 @@ fi
 # 修改argon主题字体和颜色
 if [ -d *"luci-theme-argon"* ]; then
 	cd ./luci-theme-argon/
-	# 上传自己的 Argon 主题背景
 	cp -f $GITHUB_WORKSPACE/pics/bg1.jpg ./htdocs/luci-static/argon/img/bg1.jpg
 	cd $PKG_PATH && echo "theme-argon background has been customized!"
 
@@ -139,9 +121,7 @@ fi
 NSS_DRV="../feeds/nss_packages/qca-nss-drv/files/qca-nss-drv.init"
 if [ -f "$NSS_DRV" ]; then
 	echo " "
-
 	sed -i 's/START=.*/START=85/g' $NSS_DRV
-
 	cd $PKG_PATH && echo "qca-nss-drv has been fixed!"
 fi
 
@@ -149,9 +129,7 @@ fi
 NSS_PBUF="./kernel/mac80211/files/qca-nss-pbuf.init"
 if [ -f "$NSS_PBUF" ]; then
 	echo " "
-
 	sed -i 's/START=.*/START=86/g' $NSS_PBUF
-
 	cd $PKG_PATH && echo "qca-nss-pbuf has been fixed!"
 fi
 
@@ -159,9 +137,7 @@ fi
 TS_FILE=$(find ../feeds/packages/ -maxdepth 3 -type f -wholename "*/tailscale/Makefile")
 if [ -f "$TS_FILE" ]; then
 	echo " "
-
 	sed -i '/\/files/d' $TS_FILE
-
 	cd $PKG_PATH && echo "tailscale has been fixed!"
 fi
 
@@ -169,9 +145,7 @@ fi
 CM_FILE=$(find ../feeds/packages/ -maxdepth 3 -type f -wholename "*/coremark/Makefile")
 if [ -f "$CM_FILE" ]; then
 	echo " "
-
 	sed -i 's/mkdir/mkdir -p/g' $CM_FILE
-
 	cd $PKG_PATH && echo "coremark has been fixed!"
 fi
 
@@ -179,8 +153,6 @@ fi
 RUST_FILE=$(find ../feeds/packages/ -maxdepth 3 -type f -wholename "*/rust/Makefile")
 if [ -f "$RUST_FILE" ]; then
 	echo " "
-
 	sed -i 's/ci-llvm=true/ci-llvm=false/g' $RUST_FILE
-
 	cd $PKG_PATH && echo "✅ rust has been fixed!"
 fi
