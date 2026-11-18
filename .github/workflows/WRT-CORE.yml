@@ -66,7 +66,7 @@ permissions:
 jobs:
   core:
     name: ${{ inputs.WRT_SOURCE }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
 
     steps:
       - name: Checkout Projects
@@ -206,10 +206,31 @@ jobs:
             cat "$GITHUB_WORKSPACE/Config/$WRT_CONFIG.txt" >> .config
           else
             cat "$GITHUB_WORKSPACE/Config/$WRT_CONFIG.txt" "$GITHUB_WORKSPACE/Config/GENERAL.txt" >> .config
+            case "$WRT_TARGET" in
+              mediatek|qualcommax|rockchip) echo 'CONFIG_PACKAGE_kmod-mtd-rw=y' >> .config ;;
+            esac
           fi
           "$GITHUB_WORKSPACE/Scripts/Settings.sh"
+
+          required_packages=()
+          if [[ "$WRT_CONFIG" == X86 ]]; then
+            for package in luci-app-homeproxy luci-app-openclash luci-app-passwall; do
+              selection=$(grep -E "^CONFIG_PACKAGE_${package}=|^# CONFIG_PACKAGE_${package} is not set$" .config | tail -n 1 || true)
+              if [[ "$selection" == "CONFIG_PACKAGE_${package}=y" ]]; then
+                required_packages+=("$package")
+              fi
+            done
+          fi
+
           rm -rf build_dir/target-*/linux-* staging_dir/target-*
           make defconfig -j"$(nproc)"
+          for package in "${required_packages[@]}"; do
+            if ! grep -Fxq "CONFIG_PACKAGE_${package}=y" .config; then
+              echo "::error::${package} was selected but is missing from the final build configuration."
+              exit 1
+            fi
+          done
+          printf 'WRT_REQUIRED_PACKAGES=%s\n' "${required_packages[*]}" >> "$GITHUB_ENV"
 
       - name: Download Packages
         if: env.WRT_TEST != 'true'
@@ -247,6 +268,24 @@ jobs:
           cp -f ./.config ./upload/Config-"$WRT_CONFIG"-"$WRT_INFO"-"$WRT_BRANCH"-"$WRT_DATE".txt
 
           if [[ $WRT_TEST != 'true' ]]; then
+            if [[ "$WRT_CONFIG" == X86 ]]; then
+              shopt -s nullglob
+              manifests=(./bin/targets/x86/64/*.manifest)
+              if (( ${#manifests[@]} == 0 )); then
+                echo '::error::No X86 firmware package manifest was generated.'
+                exit 1
+              fi
+              read -r -a required_packages <<< "$WRT_REQUIRED_PACKAGES"
+              for manifest in "${manifests[@]}"; do
+                for package in "${required_packages[@]}"; do
+                  if ! grep -q "^${package} - " "$manifest"; then
+                    echo "::error::${package} is missing from ${manifest}."
+                    exit 1
+                  fi
+                done
+              done
+            fi
+
             echo "WRT_KVER=$(find ./bin/targets/ -type f -name "*.manifest" -exec grep -oP '^kernel - \K[\d\.]+' {} \;)" >> $GITHUB_ENV
             echo "WRT_LIST=$(find ./bin/targets/ -type f -name "*.manifest" -exec grep -oP '^luci-(app|theme)[^ ]*' {} \; | tr '\n' ' ')" >> $GITHUB_ENV
 
@@ -264,7 +303,7 @@ jobs:
           fi
 
       - name: Release Firmware
-        uses: softprops/action-gh-release@v2.5.0
+        uses: softprops/action-gh-release@v3.0.4
         with:
           tag_name: ${{ env.WRT_CONFIG }}-${{ env.WRT_INFO }}-${{ env.WRT_BRANCH }}-${{ env.WRT_DATE }}
           files: ./wrt/upload/*.*
